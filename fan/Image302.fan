@@ -13,9 +13,9 @@ class Image302
   // Data. Note: Color internally just uses a single int (argb), so fairly eficient
   Color[] pixels := [,]
 
-  DrawingEnv env := DrawingEnv() 
+  DrawingEnv env := DrawingEnv()
   // Todo : antialiasing ??
-  
+
   ** Creates an empty image
   ** See load() method to create from a file
   new make(Size size)
@@ -24,7 +24,7 @@ class Image302
     // fill with transparent pixels
     pixels.fill(Color.makeArgb(0,0,0,0), size.w * size.h)
   }
-  
+
   ** Change the current stroke color and thickness)
   ** Zero thickness means no stroke
   This stroke(Color color, Int thickness)
@@ -33,21 +33,21 @@ class Image302
     env.strokeSize = thickness
     return this
   }
-  
+
   ** Change the current fill color to be used when filling items
   This fill(Color color)
   {
     env.fillColor = color
     return this
   }
-  
+
   ** tuen on / off antialiasing
   This aa(Bool val)
   {
     env.antiAliasing = val
     return this
   }
-  
+
   ** Draw a pixel at x,y
   ** If color contains some alpha, blend it with the existing pixel color
   This pix(Point p, Color color)
@@ -57,16 +57,16 @@ class Image302
     pixels[p.y * size.w + p.x] = blend(getPixel(p), color)
     return this
   }
-  
+
   ** Draw a line with the current stroke
-  This line(Point p1, Point p2)
+  This line(Line line)
   {
-    LineShape(p1, p2).render(this, env)
+    LineShape(line).render(this, env)
     return this
   }
-  
+
   ** Draw a rectangle with the current stroke.
-  This rect(Rect r) 
+  This rect(Rect r)
   {
     // todo: antialias on the inside & outside edges
     fc := env.fillColor
@@ -78,10 +78,10 @@ class Image302
     filledRect(Rect(r.x, r.y + env.strokeSize, env.strokeSize, r.h - (env.strokeSize * 2)))
     filledRect(Rect(r.x + r.w - env.strokeSize, r.y + env.strokeSize, env.strokeSize, r.h - (env.strokeSize * 2)))
     env.fillColor = fc
-    return this    
+    return this
   }
-  
-  ** Draw a filled rectangle usng the fill color (no stroke used).
+
+  ** Draw a filled rectangle using the fill color (no stroke used).
   This filledRect(Rect r)
   {
     // TODO: antialiasing on the outside edge ?
@@ -101,93 +101,93 @@ class Image302
 
   ** A piece of oval ?
   This arc() {throw Err("Not implemented")} // part of an ellipse
-  
+
   ** Draw a polygon ... link all the points together.
-  This poly(Point[] points) 
+  This poly(Point[] points)
   {
     Point? prev
     points[1 .. -1].each |point, index|
     {
-      line(points[index], point)
+      line(Line(points[index], point))
     }
-    line(points[-1], points[0])
+    line(Line(points[-1], points[0]))
     return this
-  } 
+  }
 
   **
   ** Draw a the text string with the current brush and font.
   ** The x, y coordinate specifies the top left corner of
   ** the rectangular area where the text is to be drawn.
   **
-  This text(Point p, Str s) 
+  This text(Point p, Str s)
   {
     // TODO : Render fonts ??
     // rendering ttf font is a huge pita ... maybe later
     // could render bmp fonts for now as a start
     throw Err("Not implemented")
   }
-  
+
   Color? getPixel(Point p)
   {
     if(p.x < 0 || p.y < 0 || p.x >= size.w || p.y >= size.h)
       return null // Out of bounds
-    return pixels[p.y * size.w + p.x]    
+    return pixels[p.y * size.w + p.x]
   }
 
-  ** 
+  **
   ** Returns the unique colors used in this image
   ** CPU intensive as we scan the whole image to count colors
-  ** If we hit max then we stop and return  
+  ** If we hit max then we stop and return
   Color[] colors(Int? max := null)
   {
     Color[] colors := [,]
     // scans the image to count colors
     pixels.eachWhile |color -> Int?|
     {
-      if( ! colors.contains(color)) 
+      if( ! colors.contains(color))
         colors.add(color)
       if(max != null && colors.size >= max)
         return 1 // continue
       return null
-    }    
-    return colors     
+    }
+    return colors
   }
-  
+
   ** Save to a file
   Void save(File f, ImageFormat format, Str:Str options := [:])
   {
     out := f.out
     try
-    {  
+    {
       format.save(out, this, options)
     }
     finally
     {
       out.close
-    }          
+    }
   }
-  
+
   static Image302 load(File f, ImageFormat format)
   {
     in := f.in
     try
-    {  
+    {
       return format.load(in)
     }
     finally
     {
       in.close
-    }          
+    }
   }
-    
+
   ** fractional part of float
   internal Float floatPart(Float f) { f - f.floor }
-  
+
   ** Alpha blending of 2 pixels
   ** Return the resulting (blended) pixel
   internal Color blend(Color curc, Color newc)
   {
-    if(newc.a == 255 || curc.a == 0) 
+    if(newc.a == 255 || curc.a == 0)
       return newc
     if(newc.a == 0)
       return curc
